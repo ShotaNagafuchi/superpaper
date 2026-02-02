@@ -9,3 +9,4 @@ superpaper.egg-info/
 *.snap
 *.spec
 .vscode
+venv/
