@@ -21,6 +21,7 @@ Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Wi
 - Set a single image across all displays
 - Set different image on every display
 - Span images on groups of displays: one image on laptop screen and another spanned on two external monitors, for example.
+- **Video wallpapers (macOS)**: set smooth-looping video wallpapers across all displays
 - **Pixel density correction**: span an image flawlessly across displays of different shapes and sizes!
 - **Bezel correction**: let the image continuously span behind your bezels.
 - **Perspective correction**: span the image even more flawlessly!
@@ -87,6 +88,49 @@ You can either:
   - Control Superpaper in the background from the tray menu or with hotkeys.
 - Call it from the [command-line](./docs/cli-usage.md)
   - Perspectives cannot be configured or used through the CLI currently.
+
+
+## Video Wallpapers (macOS)
+
+Superpaper supports smooth-looping video wallpapers on macOS using hardware-accelerated playback.
+
+### Setting up a video wallpaper
+
+1. **Place your video file** in the `profiles/` directory (e.g., `my_video.mp4`)
+
+2. **Create a profile file** in the `profiles/` directory (e.g., `my_video.profile`):
+
+```ini
+[my_video]
+name=my_video
+spanmode=single
+slideshow=false
+video_display0=/path/to/your/video.mp4
+video_display1=/path/to/your/video.mp4
+video_display2=/path/to/your/video.mp4
+```
+
+**Important notes:**
+- Use `spanmode=single` to span one video across all displays
+- Add a `video_displayN` entry for each display (N = 0, 1, 2, ...)
+- Use the same video path for all displays when spanning
+- Use absolute paths to your video files
+
+3. **Apply the profile**:
+   - Right-click the tray icon (panorama icon)
+   - Select "Profiles" → "my_video"
+   - The video will start playing across all displays
+
+### Supported video formats
+- MP4 (recommended)
+- MOV
+- Other formats supported by AVFoundation
+
+### Tips
+- For best performance, use videos with moderate resolution (1080p-4K)
+- Videos loop automatically and seamlessly
+- Audio is muted by default
+- The video wallpaper stops when Superpaper closes
 
 
 ## Troubleshooting

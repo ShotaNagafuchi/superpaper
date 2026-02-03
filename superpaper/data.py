@@ -24,12 +24,24 @@ from superpaper.sp_paths import (PATH, CONFIG_PATH, PROFILES_PATH, TEMP_PATH)
 def list_profiles():
     """Lists profiles as initiated objects from the sp_paths.PROFILES_PATH."""
     files = sorted(os.listdir(sp_paths.PROFILES_PATH))
+    # #region agent log
+    import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "A", "location": "data.py:list_profiles:27", "message": "list_profiles: scanned files", "data": {"files": files, "profiles_path": sp_paths.PROFILES_PATH}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+    # #endregion
     profile_list = []
     for pfle in files:
         try:
             if pfle.endswith(".profile"):
+                # #region agent log
+                import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "A", "location": "data.py:list_profiles:33", "message": "list_profiles: attempting to load profile", "data": {"filename": pfle}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+                # #endregion
                 profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, pfle)))
+                # #region agent log
+                import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "A", "location": "data.py:list_profiles:37", "message": "list_profiles: successfully loaded profile", "data": {"filename": pfle}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+                # #endregion
         except Exception as exep:  # TODO implement proper error catching for ProfileData init
+            # #region agent log
+            import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "B,E", "location": "data.py:list_profiles:41", "message": "list_profiles: exception loading profile", "data": {"filename": pfle, "exception": str(exep), "exception_type": type(exep).__name__}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+            # #endregion
             msg = ("There was an error when loading profile '{}'.\n".format(pfle)
                    + "Would you like to delete it? Choosing 'No' will just ignore the profile."
             )
@@ -43,6 +55,9 @@ def list_profiles():
                 continue
             else:
                 continue
+    # #region agent log
+    import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "A", "location": "data.py:list_profiles:57", "message": "list_profiles: final result", "data": {"profile_count": len(profile_list), "profile_names": [p.name for p in profile_list]}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+    # #endregion
     return profile_list
 
 def open_profile(profile):
@@ -251,6 +266,9 @@ class ProfileData(object):
     .profile files and parsed when creating a profile data object.
     """
     def __init__(self, profile_file):
+        # #region agent log
+        import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "B,E", "location": "data.py:ProfileData.__init__:256", "message": "ProfileData.__init__: entry", "data": {"profile_file": profile_file}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+        # #endregion
         if not wpproc.RESOLUTION_ARRAY:
             msg = "Cannot parse profile, monitor resolution data is missing."
             show_message_dialog(msg)
@@ -275,6 +293,13 @@ class ProfileData(object):
         self.hk_binding = None
         self.perspective = "default"
         self.paths_array = []
+        
+        # Video wallpaper support (macOS only)
+        self.video_mode = False
+        self.video_paths_array = []
+        # #region agent log
+        import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "E", "location": "data.py:ProfileData.__init__:285", "message": "ProfileData.__init__: before parse_profile", "data": {"video_mode": self.video_mode, "video_paths_array": self.video_paths_array}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+        # #endregion
 
         self.parse_profile(self.file)
         if self.ppimode is True:
@@ -285,6 +310,9 @@ class ProfileData(object):
 
     def parse_profile(self, parse_file):
         """Read wallpaper profile settings from file."""
+        # #region agent log
+        import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "B,C", "location": "data.py:parse_profile:291", "message": "parse_profile: entry", "data": {"parse_file": parse_file}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+        # #endregion
         profile_file = open(parse_file, "r", encoding="utf-8")
         try:
             for line in profile_file:
@@ -292,6 +320,9 @@ class ProfileData(object):
                 words = line.split("=")
                 if words[0] == "name":
                     self.name = words[1].strip()
+                    # #region agent log
+                    import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "C", "location": "data.py:parse_profile:302", "message": "parse_profile: parsed name", "data": {"name": self.name}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+                    # #endregion
                 elif words[0] == "spanmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "single":
@@ -388,6 +419,18 @@ class ProfileData(object):
                     self.perspective = words[1].strip()
                     # if sp_logging.DEBUG:
                     #     sp_logging.G_LOGGER.info("perspective preset: %s", self.perspective)
+                elif words[0].startswith("video_display"):
+                    # #region agent log
+                    import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "B,E", "location": "data.py:parse_profile:397", "message": "parse_profile: found video_display line", "data": {"line": line.strip(), "words": words, "key": words[0]}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+                    # #endregion
+                    # Video wallpaper paths (macOS only)
+                    video_path = words[1].strip()
+                    if video_path:
+                        self.video_paths_array.append(video_path)
+                        self.video_mode = True
+                    # #region agent log
+                    import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "E", "location": "data.py:parse_profile:406", "message": "parse_profile: after video_display parse", "data": {"video_path": video_path, "video_paths_array": self.video_paths_array, "video_mode": self.video_mode}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+                    # #endregion
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
@@ -395,11 +438,17 @@ class ProfileData(object):
                 else:
                     sp_logging.G_LOGGER.info("Unknown setting line in config: %s", line)
         except Exception as excep:
+            # #region agent log
+            import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "B", "location": "data.py:parse_profile:420", "message": "parse_profile: exception during parsing", "data": {"exception": str(excep), "exception_type": type(excep).__name__, "profile_name": self.name}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+            # #endregion
             profile_file.close()
             raise ProfileDataException("There was an error parsing the profile:",
                                        self.name, self.file, excep)
         finally:
             profile_file.close()
+            # #region agent log
+            import json; log_data = {"sessionId": "debug-session", "runId": "initial", "hypothesisId": "C,E", "location": "data.py:parse_profile:429", "message": "parse_profile: exit", "data": {"name": self.name, "video_mode": self.video_mode, "video_paths_count": len(self.video_paths_array), "paths_count": len(self.paths_array)}, "timestamp": int(__import__('time').time() * 1000)}; open("/Users/shotan/Documents/GitHub/superpaper/.cursor/debug.log", "a").write(json.dumps(log_data) + "\n")
+            # #endregion
 
     def compute_ppis(self, inches):
         """Compute monitor PPIs from user input diagonal inches."""
@@ -525,16 +574,17 @@ Use absolute paths for best reliabilty.".format(path)
                         show_message_dialog(message, "Error")
                         continue
                     else:
-                        # List only images that are of supported type.
+                        # List only images and videos that are of supported type.
+                        supported_extensions = wpproc.G_SUPPORTED_IMAGE_EXTENSIONS + wpproc.G_SUPPORTED_VIDEO_EXTENSIONS
                         if os.path.isfile(path):
-                            if path.lower().endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                            if path.lower().endswith(supported_extensions):
                                 list_of_images += [path]
                             else:
                                 pass
                         else:
                             list_of_images += [os.path.join(path, f)
                                             for f in os.listdir(path)
-                                            if f.lower().endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
+                                            if f.lower().endswith(supported_extensions)
                                             ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.

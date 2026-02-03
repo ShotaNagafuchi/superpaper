@@ -502,6 +502,17 @@ Check that it is formatted properly and valid keys.".format(profile.hk_binding)
     def on_exit(self, event):
         """Exits Superpaper."""
         self.rt_stop()
+        
+        # Stop video daemons if running (macOS only)
+        if platform.system() == "Darwin":
+            try:
+                from superpaper.video_engine import VideoEngine
+                engine = VideoEngine.shared_instance()
+                engine.cleanup()
+                sp_logging.G_LOGGER.info("Video daemons cleaned up")
+            except Exception as e:
+                sp_logging.G_LOGGER.error(f"Error cleaning up video daemons: {e}")
+        
         wx.CallAfter(self.Destroy)
         self.frame.Close()
 

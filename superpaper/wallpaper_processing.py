@@ -63,6 +63,7 @@ G_ACTIVE_DISPLAYSYSTEM = None
 G_ACTIVE_PROFILE = None
 G_WALLPAPER_CHANGE_LOCK = Lock()
 G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
+G_SUPPORTED_VIDEO_EXTENSIONS = (".mp4", ".mov", ".webm", ".avi", ".m4v", ".mkv")
 G_SET_COMMAND_STRING = ""
 
 # global to take care that failure message is not shown more than once at launch
@@ -1454,6 +1455,35 @@ def set_wallpaper_macos(outputfile, image_piece_list = None, force = False):
         remove_old_temp_files(outputfile)
 
 
+def is_video_file(filepath):
+    """Check if file is a video based on extension."""
+    if not filepath:
+        return False
+    return filepath.lower().endswith(G_SUPPORTED_VIDEO_EXTENSIONS)
+
+
+def set_video_wallpaper_macos(video_paths, display_ids):
+    """
+    Set video wallpaper on macOS using video daemon.
+    
+    Args:
+        video_paths: List of video file paths
+        display_ids: List of display IDs corresponding to video paths
+    """
+    try:
+        from superpaper.video_engine import VideoEngine
+        
+        engine = VideoEngine.shared_instance()
+        engine.start_video_wallpaper(video_paths, display_ids)
+        
+        sp_logging.G_LOGGER.info(
+            f"Started video wallpaper on {len(display_ids)} display(s)"
+        )
+    except Exception as e:
+        sp_logging.G_LOGGER.error(f"Failed to set video wallpaper: {e}")
+        raise
+
+
 def set_wallpaper_linux(outputfile, force=False):
     """
     Wallpaper setter for Linux hosts.
@@ -1788,6 +1818,27 @@ def run_profile_job(profile):
     repeating_timer = None
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info("running profile job with profile: %s", profile.name)
+
+    # Check if this is a video profile (macOS only)
+    if hasattr(profile, 'video_mode') and profile.video_mode:
+        if platform.system() == "Darwin":
+            sp_logging.G_LOGGER.info("Running video wallpaper profile: %s", profile.name)
+            # Extract display IDs from display data
+            display_ids = []
+            for i in range(NUM_DISPLAYS):
+                # Use display index as ID for now
+                display_ids.append(i)
+            
+            # Start video wallpapers
+            set_video_wallpaper_macos(profile.video_paths_array, display_ids)
+            
+            # No slideshow for video wallpapers
+            return (None, None)
+        else:
+            sp_logging.G_LOGGER.warning(
+                "Video wallpapers are only supported on macOS. Using static images instead."
+            )
+            # Fall through to normal image processing
 
     if not profile.slideshow:
         # if sp_logging.DEBUG:

@@ -54,7 +54,7 @@ class BrowsePaths(wx.Dialog):
             #   style=wx.DIRCTRL_SHOW_FILTERS|wx.DIRCTRL_MULTIPLE,
             #   style=wx.DIRCTRL_MULTIPLE,
             dir=self.defdir,
-            filter="Image files (*.jpg, *.png)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"
+            filter="Image and Video files (*.jpg, *.png, *.mp4, *.mov)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp;*.mp4;*.mov;*.webm;*.avi;*.m4v;*.mkv"
         )
         sizer_browse.Add(self.dir3, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
         self.cb_showhidden = wx.CheckBox(self, -1, "Show hidden files")
@@ -178,7 +178,41 @@ class BrowsePaths(wx.Dialog):
         return img_id
 
     def create_thumb_bmp(self, filename):
-        wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+        """Creates a thumbnail bitmap from image or video path."""
+        # Check if this is a video file
+        if wpproc.is_video_file(filename):
+            # For video files, try to generate/get thumbnail
+            try:
+                import platform
+                if platform.system() == "Darwin":
+                    from superpaper.video_engine import VideoEngine
+                    engine = VideoEngine.shared_instance()
+                    
+                    # Generate static frame if not exists
+                    thumb_path = engine.get_or_generate_static_frame(filename)
+                    
+                    if thumb_path and os.path.exists(thumb_path):
+                        # Load the generated thumbnail
+                        filename = thumb_path
+                    else:
+                        # Fallback: create a placeholder with video icon
+                        return self.create_video_placeholder_bmp()
+                else:
+                    # Non-macOS: create placeholder
+                    return self.create_video_placeholder_bmp()
+            except Exception as e:
+                sp_logging.G_LOGGER.error(f"Failed to generate video thumbnail: {e}")
+                return self.create_video_placeholder_bmp()
+        
+        # Load image (either original image or generated video thumbnail)
+        try:
+            wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+            if not wximg.IsOk():
+                return self.create_video_placeholder_bmp()
+        except Exception as e:
+            sp_logging.G_LOGGER.error(f"Failed to load image: {e}")
+            return self.create_video_placeholder_bmp()
+        
         imgsize = wximg.GetSize()
         w2h_ratio = imgsize[0]/imgsize[1]
         if w2h_ratio > 1:
@@ -195,6 +229,23 @@ class BrowsePaths(wx.Dialog):
                          ).Resize(self.tsize,
                                   pos
                                  ).ConvertToBitmap()
+        return bmp
+    
+    def create_video_placeholder_bmp(self):
+        """Creates a placeholder bitmap for video files."""
+        # Create a simple bitmap with "VIDEO" text
+        bmp = wx.Bitmap(self.tsize[0], self.tsize[1])
+        dc = wx.MemoryDC(bmp)
+        dc.SetBackground(wx.Brush(wx.Colour(50, 50, 50)))
+        dc.Clear()
+        
+        # Draw a play icon or text
+        dc.SetTextForeground(wx.WHITE)
+        dc.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        dc.DrawText("VIDEO", int(self.tsize[0]/2) - 20, int(self.tsize[1]/2) - 10)
+        dc.DrawText("▶", int(self.tsize[0]/2) - 5, int(self.tsize[1]/2) + 10)
+        
+        dc.SelectObject(wx.NullBitmap)
         return bmp
 
     #
@@ -1114,9 +1165,13 @@ class PerspectiveConfig(wx.Dialog):
 
     def onChooseTestImage(self, event):
         """Open a file dialog to choose a test image."""
-        with wx.FileDialog(self, "Choose a test image",
-                           wildcard=("Image files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp)"
-                                     "|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"),
+        with wx.FileDialog(self, "Choose a test image or video",
+                           wildcard=("Image and Video files (*.jpg;*.png;*.mp4;*.mov)|"
+                                     "*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp;*.mp4;*.mov;*.webm;*.avi;*.m4v;*.mkv|"
+                                     "Image files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp)|"
+                                     "*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp|"
+                                     "Video files (*.mp4;*.mov;*.webm)|"
+                                     "*.mp4;*.mov;*.webm;*.avi;*.m4v;*.mkv"),
                            defaultDir=self.frame.defdir,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as file_dialog:
 

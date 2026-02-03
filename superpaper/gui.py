@@ -911,7 +911,28 @@ class WallpaperSettingsPanel(wx.Panel):
         return img_id
 
     def create_thumb_bmp(self, filename):
-        wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+        import superpaper.wallpaper_processing as wpproc
+        
+        # Check if this is a video file
+        if wpproc.is_video_file(filename):
+            # Try to generate a thumbnail from the video
+            try:
+                from superpaper.video_engine import VideoEngine
+                engine = VideoEngine.shared_instance()
+                static_frame = engine.get_or_generate_static_frame(filename)
+                if static_frame and os.path.exists(static_frame):
+                    # Use the generated static frame as thumbnail
+                    wximg = wx.Image(static_frame, type=wx.BITMAP_TYPE_ANY)
+                else:
+                    # Generate a placeholder for video
+                    return self.create_video_placeholder_bmp()
+            except Exception as e:
+                sp_logging.G_LOGGER.warning(f"Failed to generate video thumbnail: {e}")
+                return self.create_video_placeholder_bmp()
+        else:
+            # Regular image file
+            wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+        
         imgsize = wximg.GetSize()
         w2h_ratio = imgsize[0]/imgsize[1]
         if w2h_ratio > 1:
@@ -929,6 +950,17 @@ class WallpaperSettingsPanel(wx.Panel):
             ).Resize(
                 self.tsize, pos
             ).ConvertToBitmap()
+        return bmp
+    
+    def create_video_placeholder_bmp(self):
+        """Create a placeholder bitmap for video files."""
+        bmp = wx.Bitmap(self.tsize[0], self.tsize[1])
+        dc = wx.MemoryDC(bmp)
+        dc.SetBackground(wx.Brush(wx.Colour(64, 64, 64)))
+        dc.Clear()
+        dc.SetTextForeground(wx.Colour(200, 200, 200))
+        dc.DrawLabel("VIDEO", wx.Rect(0, 0, self.tsize[0], self.tsize[1]), alignment=wx.ALIGN_CENTER)
+        dc.SelectObject(wx.NullBitmap)
         return bmp
 
     def populate_lc_browse(self, pathslist, imglist):
@@ -1556,6 +1588,11 @@ class WallpaperPreviewPanel(wx.Panel):
             self.display_data = display_data
         self.refresh_preview(use_ppi_px)
         self.current_preview_images = image_list
+        
+        # Handle empty image list (e.g., for video-only profiles)
+        if not image_list:
+            # Show a placeholder or just return
+            return
 
         def safe_sub_bitmap(bm, rect):
             if rect.GetBottom() >= bm.GetHeight():
