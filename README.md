@@ -81,6 +81,20 @@ The AppImage will run once you make it executable.
 
 ## Usage
 
+**Starting Superpaper**
+
+On macOS (development mode), from the project root:
+
+```sh
+python -m superpaper
+```
+
+With debug logging:
+
+```sh
+python -m superpaper --debug
+```
+
 You can either:
 
 - Open Superpaper as a graphical application
